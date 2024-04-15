@@ -6,7 +6,35 @@ def read_tiles_from_file(filename):
     # Task 1
     # Return a tile board constructed using a configuration in a file.
     # Replace the line below with your code.
-    raise NotImplementedError
+    # Create a dictionary to map the characters to the connection repersentaion. 
+    char_to_connection = {
+        ' ': (),    # Empty tile
+        'i': (0,),  # straight half tile
+        'L': (0, 1),  # L-shaped tile
+        'I': (0, 2),  # Straight full tile
+        'T': (0, 1, 2)  # T-shaped tile
+    }
+    #empty list to store tiles on the board
+    tile_board = []
+    #opens the file in read and goes through each line
+    with open(filename, 'r') as file:
+        #read each line of the file
+        for line in file:
+            #strip each character in the line and split the line into individual characters
+            tiles = [char.strip() for char in line]
+
+            #convert characters to their corresponding connection representations
+            connections = [char_to_connection.get(char, ()) for char in tiles]
+
+            #add the row of connection representations to the tile board
+            tile_board.append(connections)
+    #converts the tile board list into a tuple 
+    tile_board = tuple(map(tuple,tile_board))
+
+    print(tile_board)
+    #returns the tile board tuple
+    return tile_board
+
 
 class KNetWalk(Problem):
     def __init__(self, tiles):
@@ -40,6 +68,8 @@ class KNetWalk(Problem):
         # Task 2
         # Return an integer fitness value of a given state.
         # Replace the line below with your code.
+
+        
         raise NotImplementedError
 
 # Task 3
@@ -71,10 +101,10 @@ def stochastic_beam_search(problem, population, limit=1000):
 if __name__ == '__main__':
 
     # Task 1 test code
-    '''
+    
     network = KNetWalk('assignment2config.txt')
     visualise(network.tiles, network.initial)
-    '''
+    
 
     # Task 2 test code
     '''
