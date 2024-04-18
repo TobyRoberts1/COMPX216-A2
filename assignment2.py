@@ -6,34 +6,31 @@ def read_tiles_from_file(filename):
     # Task 1
     # Return a tile board constructed using a configuration in a file.
     # Replace the line below with your code.
-    # Create a dictionary to map the characters to the connection repersentaion. 
-    char_to_connection = {
-        ' ': (),    # Empty tile
-        'i': (0,),  # straight half tile
-        'L': (0, 1),  # L-shaped tile
-        'I': (0, 2),  # Straight full tile
-        'T': (0, 1, 2)  # T-shaped tile
-    }
-    #empty list to store tiles on the board
-    tile_board = []
-    #opens the file in read and goes through each line
     with open(filename, 'r') as file:
-        #read each line of the file
-        for line in file:
-            #strip each character in the line and split the line into individual characters
-            tiles = [char.strip() for char in line]
-
-            #convert characters to their corresponding connection representations
-            connections = [char_to_connection.get(char, ()) for char in tiles]
-
-            #add the row of connection representations to the tile board
-            tile_board.append(connections)
-    #converts the tile board list into a tuple 
-    tile_board = tuple(map(tuple,tile_board))
-
-    print(tile_board)
-    #returns the tile board tuple
-    return tile_board
+        lines = file.readlines()
+        tiles = []
+        for line in lines:
+            row = []
+            for char in line.rstrip('\n'):
+                if char == ' ':
+                    row.append(())
+                elif char == 'i':
+                    row.append((0,))
+                elif char == 'L':
+                    row.append((0, 1))
+                elif char == 'I':
+                    row.append((0, 2))
+                elif char == 'T':
+                    row.append((0, 1, 2))
+            tiles.append(tuple(row))
+    
+    # Ensure that the number of tiles in each row is consistent
+    width = len(tiles[0])
+    for row in tiles:
+        if len(row) != width:
+            raise ValueError("Number of tiles in each row does not match")
+    print(tuple(tiles))
+    return tuple(tiles)
 
 
 class KNetWalk(Problem):
@@ -65,22 +62,57 @@ class KNetWalk(Problem):
         return self.value(state) == self.max_fitness
 
     def value(self, state):
-        # Task 2
-        # Return an integer fitness value of a given state.
-        # Replace the line below with your code.
+        fitness = 0
+        height = len(self.tiles)
+        width = len(self.tiles[0])
 
-        
-        raise NotImplementedError
+        for i in range(height):
+            for j in range(width):
+                tile = self.tiles[i][j]
+                orientation = state[i * width + j]
+                orientated_tile = tuple ((con + orientation) % 4 for con in tile)
+
+                # Check connections to top, left, bottom, and right
+                #if not top row
+                if i > 0 and 1 in orientated_tile: 
+                    #need to get the tile above it to see if it is pointing down. 
+                    top_tile = self.tiles[i - 1][j]
+                    top_orientation = state[(i - 1) * width + j]
+                    top_orientated_tile = tuple((con + top_orientation) % 4 for con in top_tile) 
+                    if 3 in top_orientated_tile:
+                        fitness += 1  # Increment fitness by 1 for connection to the top
+                if j > 0 and 2 in orientated_tile:
+                    left_tile = self.tiles[i][j - 1]
+                    left_orientation = state[i * width + j - 1]
+                    left_orientated_tile = tuple((con + left_orientation) % 4 for con in left_tile)
+                    if 0 in left_orientated_tile:
+                        fitness += 1  # Increment fitness by 1 for connection to the left
+                if i < height - 1 and 3 in orientated_tile:
+                    bottom_tile = self.tiles[i + 1][j]
+                    bottom_orientation = state[(i + 1) * width + j]
+                    bottom_orientated_tile = tuple ((con + bottom_orientation) % 4 for con in bottom_tile)
+                    if 1 in bottom_orientated_tile: 
+                        fitness += 1  # Increment fitness by 1 for connection to the bottom
+                if j < width - 1 and 0 in orientated_tile:
+                    right_tile = self.tiles[i][j + 1]
+                    right_orientation = state[i * width + j + 1]
+                    right_orientated_tile = tuple((con + right_orientation) % 4 for con in right_tile)
+                    if 2 in right_orientated_tile:
+                        fitness += 1  # Increment fitness by 1 for connection to the right
+        return fitness
+
+
+
 
 # Task 3
 # Configure an exponential schedule for simulated annealing.
-sa_schedule = exp_schedule(k=20, lam=0.005, limit=100)
-
+sa_schedule = exp_schedule(k=30, lam=0.25, limit=150)
+ 
 # Task 4
 # Configure parameters for the genetic algorithm.
-pop_size = None
-num_gen = 1000
-mutation_prob = 0.1
+pop_size = 55
+num_gen = 120
+mutation_prob = 0.3
 
 def local_beam_search(problem, population):
     # Task 5
@@ -98,34 +130,32 @@ def stochastic_beam_search(problem, population, limit=1000):
     # Replace the line below with your code.
     raise NotImplementedError
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     # Task 1 test code
-    
     network = KNetWalk('assignment2config.txt')
     visualise(network.tiles, network.initial)
-    
 
     # Task 2 test code
-    '''
     run = 0
     method = 'hill climbing'
     while True:
         network = KNetWalk('assignment2config.txt')
         state = hill_climbing(network)
+        print(f'{method} run {run}: state fitness {network.value(state)} out of {network.max_fitness}')
         if network.goal_test(state):
             break
         else:
             print(f'{method} run {run}: no solution found')
-            print(f'best state fitness {network.value(state)} out of {network.max_fitness}')
             visualise(network.tiles, state)
         run += 1
     print(f'{method} run {run}: solution found')
     visualise(network.tiles, state)
-    '''
+
+    
 
     # Task 3 test code
-    '''
+    
     run = 0
     method = 'simulated annealing'
     while True:
@@ -140,10 +170,10 @@ if __name__ == '__main__':
         run += 1
     print(f'{method} run {run}: solution found')
     visualise(network.tiles, state)
-    '''
+    
 
     # Task 4 test code
-    '''
+    
     run = 0
     method = 'genetic algorithm'
     while True:
@@ -160,7 +190,7 @@ if __name__ == '__main__':
         run += 1
     print(f'{method} run {run}: solution found')
     visualise(network.tiles, state)
-    '''
+    
 
     # Task 5 test code
     '''
